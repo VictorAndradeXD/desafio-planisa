@@ -1,41 +1,78 @@
 package com.planisa.service;
 
-import com.planisa.model.CovidDataWrapper;
-import com.planisa.repository.DadosApiRepository;
-import org.springframework.http.*;
+import com.planisa.model.CovidData;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriComponentsBuilder;
-
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import java.time.LocalDate;
-import java.util.Optional;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class ApiService {
 
-    private final DadosApiRepository repository;
-    private final RestTemplate restTemplate;
+    @Value("${api.key}")
+    private String apiKey;
 
-    public ApiService(DadosApiRepository repository) {
-        this.repository = repository;
-        this.restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate = new RestTemplate();
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    public List<CovidData> fetchCovidData(String country1, String country2, String startDate, String endDate) {
+        List<CovidData> covidDataList = new ArrayList<>();
+
+        covidDataList.addAll(fetchDataForCountry(country1, startDate, endDate, ""));
+        covidDataList.addAll(fetchDataForCountry(country2, startDate, endDate, ""));
+
+        return covidDataList;
     }
 
-    public CovidDataWrapper buscarEGuardarDados(String data, String tipo, String pais, String regiao) {
-        // Construir URL com query params opcionais
-        String url = UriComponentsBuilder.fromHttpUrl("https://api.api-ninjas.com/v1/covid19")
-                .queryParamIfPresent("date", Optional.ofNullable(data))
-                .queryParamIfPresent("country", Optional.ofNullable(pais))
-                .queryParamIfPresent("region", Optional.ofNullable(regiao))
-                .queryParamIfPresent("type", Optional.ofNullable(tipo))
-                .toUriString();
+    public List<CovidData> fetchDataForCountry(String country, String startDate, String endDate, String type) {
+        String url = "https://api.api-ninjas.com/v1/covid19?country=" + country + "&type=" + type;
+        List<CovidData> covidDataList = new ArrayList<>();
 
-        ResponseEntity<CovidDataWrapper> response = restTemplate.exchange(url, HttpMethod.GET, null, CovidDataWrapper.class);
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("X-Api-Key", apiKey);
+            HttpEntity<String> entity = new HttpEntity<>(headers);
 
-        if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-            return repository.save(response.getBody());
+            String jsonResponse = restTemplate.exchange(url, HttpMethod.GET, entity, String.class).getBody();
+            JsonNode rootNode = objectMapper.readTree(jsonResponse);
+
+            for (JsonNode node : rootNode) {
+                String region = node.has("region") ? node.get("region").asText() : "N/A";
+                JsonNode casesNode = node.get(type); // Usa o tipo de dados especificado (cases ou deaths)
+
+                casesNode.fields().forEachRemaining(entry -> {
+                    String date = entry.getKey();
+                    if (isDateInRange(date, startDate, endDate)) {
+                        JsonNode dataNode = entry.getValue();
+                        CovidData covidData = new CovidData();
+                        covidData.setDate(LocalDate.parse(date));
+                        covidData.setCases(type.equals("cases") ? dataNode.get("total").asInt() : 0);
+                        covidData.setDeaths(type.equals("deaths") ? dataNode.get("total").asInt() : 0);
+                        covidData.setCountry(country);
+                        covidDataList.add(covidData);
+                    }
+                });
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        return null;
+
+        return covidDataList;
     }
 
+    private boolean isDateInRange(String date, String startDate, String endDate) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        LocalDate currentDate = LocalDate.parse(date, formatter);
+        LocalDate start = LocalDate.parse(startDate, formatter);
+        LocalDate end = LocalDate.parse(endDate, formatter);
+        return !currentDate.isBefore(start) && !currentDate.isAfter(end);
+    }
 }
