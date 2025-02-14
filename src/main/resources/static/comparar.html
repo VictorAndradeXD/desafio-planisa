@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Comparar Países</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+<h1>Comparar Países</h1>
+<form id="compareForm">
+    <label for="country1">País 1:</label>
+    <input type="text" id="country1" name="country1" required>
+
+    <label for="country2">País 2:</label>
+    <input type="text" id="country2" name="country2" required>
+
+    <label for="startDate">Data Inicial:</label>
+    <input type="date" id="startDate" name="startDate" required>
+
+    <label for="endDate">Data Final:</label>
+    <input type="date" id="endDate" name="endDate" required>
+</form>
+
+<!-- Botões para exibir indicadores -->
+<div id="indicators" style="margin-top: 20px;">
+    <button id="showCases" class="button">Diferença de Casos Confirmados</button>
+    <button id="showDeaths" class="button">Diferença de Mortes</button>
+    <button id="showFatalityRate" class="button">Taxa de Letalidade</button>
+</div>
+
+<!-- Área para exibir os resultados -->
+<div id="result" style="margin-top: 20px;"></div>
+
+<a href="/" class="button">Voltar</a>
+
+<script src="/js/compare.js"></script>
+</body>
+</html>

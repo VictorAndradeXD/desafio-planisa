@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Cadastrar Benchmark</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+<h1>Cadastrar Benchmark</h1>
+<form id="benchmarkForm">
+    <label for="name">Nome do Benchmark:</label>
+    <input type="text" id="name" name="name" required>
+
+    <label for="country1">País 1:</label>
+    <input type="text" id="country1" name="country1" required>
+
+    <label for="country2">País 2:</label>
+    <input type="text" id="country2" name="country2" required>
+
+    <label for="startDate">Data Inicial:</label>
+    <input type="date" id="startDate" name="startDate" required>
+
+    <label for="endDate">Data Final:</label>
+    <input type="date" id="endDate" name="endDate" required>
+
+    <button type="submit">Salvar</button>
+</form>
+
+<!-- Barra de progresso -->
+<div id="progressBar" style="display: none;">
+    <div id="progress"><strong>Aguarde o processamento...</strong></div>
+</div>
+
+<a href="/" class="button">Voltar</a>
+
+<script src="/js/app.js"></script>
+</body>
+</html>
